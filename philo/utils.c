@@ -6,11 +6,33 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/07 01:35:52 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/12 21:26:09 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/13 17:46:42 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+
+void	ft_bzero(void *s, size_t n)
+{
+	size_t	i;
+
+	i = -1;
+	while (++i < n)
+		((char *) s)[i] = '\0';
+}
+
+void	*ft_calloc(size_t nel, size_t elsize)
+{
+	void	*p;
+	int		prod;
+
+	p = malloc(nel * elsize);
+	if (!p)
+		return (NULL);
+	prod = nel * elsize;
+	ft_bzero(p, nel * elsize);
+	return (p);
+}
 
 int	ft_atoi(const char *strn)
 {

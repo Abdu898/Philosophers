@@ -6,7 +6,7 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/17 17:50:57 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/12 21:35:51 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/13 17:47:45 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,8 +47,8 @@ typedef struct s_args
 	int					all_ate;
 	int					died;
 	int					dead_philo_id;
-	pthread_mutex_t		forks[PHILO_MAX];
-	t_philo				philo[PHILO_MAX];
+	pthread_mutex_t		*forks;
+	t_philo				*philo;
 	long				t_start;
 	long				t_end;
 	long				now;
@@ -65,6 +65,8 @@ void	ft_check_args(t_args *args);
 void	ft_init_args(int argc, char **argv, t_args *args);
 
 //utils.c
+void	ft_bzero(void *s, size_t n);
+void	*ft_calloc(size_t nel, size_t elsize);
 int		ft_atoi(const char *strn);
 void	ft_putstr_fd(char *s, int fd);
 void	ft_destroy_forks(t_args *args);
