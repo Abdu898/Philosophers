@@ -1,22 +1,20 @@
 
 NAME = philo
 
-SRC = handle_args.c philo.c routine.c time.c utils.c dpug.c
+SRC = handle_args.c init_forks.c philo.c \
+		routine.c time.c utils.c dpug.c death_checker.c
 
 CC = cc
 
-CFLAGS = -Wall -Werror -Wextra -g
+CFLAGS = -Wall -Werror -Wextra -g -fsanitize=thread
 
-INCLUDE = -lpthread
+INCLUDE = -lpthread 
 
 COMPILE = $(CC) $(CFLAGS) $(INCLUDE)
 
 all: $(NAME)
 
-# %.o: %.c
-# 	$(CC) $(CFLAGS) -c $< -o $@
-
-$(NAME):
+$(NAME): $(SRC)
 	@$(CC) $(SRC) -o $(NAME)
 
 clean:

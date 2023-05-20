@@ -6,104 +6,61 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/17 17:51:05 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/13 18:21:24 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/20 04:24:42 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
-void	ft_alloc_philos_forks(t_args *args)
-{
-	t_philo			*tmp_philo;
-	pthread_mutex_t	*tmp_forks;
-
-	tmp_philo = (t_philo *)ft_calloc(args->n_philo, sizeof(t_philo *));
-	if (!(tmp_philo))
-	{
-		printf("Error: allocating memory for philos");
-		exit(EXIT_FAILURE);
-	}
-	args->philo = tmp_philo;
-	tmp_forks = (pthread_mutex_t *)ft_calloc(args->n_philo,
-			sizeof(pthread_mutex_t *));
-	if (!(tmp_forks))
-	{
-		printf("Error: allocating memory for forks");
-		exit(EXIT_FAILURE);
-	}
-	args->forks = tmp_forks;
-}
-
-void	ft_create_philos_forks(t_args *args)
-{
-	int	i;
-
-	i = -1;
-	ft_alloc_philos_forks(args);
-	while (++(i) < args->n_philo)
-	{
-		dpug_args(args);
-		if (pthread_mutex_init(&args->forks[i], NULL) != 0)
-		{
-			exit(0);
-			exit_with_error("Failed initializing mutex for fork", args, 1);
-		}
-		args->philo[i].id = i + 1;
-		args->philo[i].l_fork = i;
-		args->philo[i].r_fork = (i + 1) % args->n_philo;
-		args->philo[i].x_ate = 0;
-	}
-	if (pthread_mutex_init(&args->writing, NULL) != 0)
-		exit_with_error("Failed initializing mutex for Writing", args, 1);
-	if (pthread_mutex_init(&args->meal_check, NULL) != 0)
-		exit_with_error("Failed initializing mutex for meal_check", args, 1);
-}
 
 void	ft_exit_philo(t_args *args)
 {
 	int	i;
 
 	i = -1;
-	while (++i < args->all_ate)
-		pthread_join(args->philo[i].thread, NULL);
+	while (++i < args->n_philo)
+		pthread_join(args->philo_thread[i], NULL);
+	pthread_join(args->philo_thread[i], NULL);
 	i = -1;
 	while (++i < args->n_philo)
-		pthread_mutex_destroy(&(args->forks[i]));
-	pthread_mutex_destroy(&(args->writing));
-	pthread_mutex_destroy(&(args->meal_check));///////
-	free(args->forks);
-	free(args);
+	{
+		if (pthread_mutex_destroy(&args->forks[i]) != 0)
+			printf("Error: Failed destroying mutex for fork[%d]\n", i);
+		if (pthread_mutex_destroy(&(args->philo[i].meal_check)) != 0)
+			printf("Error: Failed destroying mutex for meal_check\n");
+		if (pthread_mutex_destroy(&(args->philo[i].died_check)) != 0)
+			printf("Error: Failed destroying mutex for died_check\n");
+	}
+	if (pthread_mutex_destroy(&(args->writing)) != 0)
+		printf("Error: Failed destroying mutex for fork[%d]\n", i);
 }
 
 void	ft_creat_threads(t_args *args)
 {
-	args->p_i = -1;
+	int	i;
+
 	args->t_start = ft_get_time_ms();
-	while (++(args->p_i) < args->n_philo)
+	i = -1;
+	while (++i < args->n_philo)
 	{
-		if (pthread_create(&args->philo[args->p_i].thread, NULL,
-				&ft_philo_routine, args) != 0)
+		args->philo[i].t_start = args->t_start;
+		args->philo[i].t_last_meal = args->t_start;
+		if (pthread_create(&args->philo_thread[i], NULL,
+				&ft_philo_routine, &(args->philo[i])) != 0)
 			exit_with_error("Failed to create philosopher thread", args, 1);
-		args->philo[args->p_i].t_last_meal = ft_get_time_ms() - args->t_start;
 	}
-	// ft_check_died(args);
+	if (pthread_create(&args->philo_thread[i], NULL,
+			&ft_check_death, args) != 0)
+		exit_with_error("Failed to create death_checker thread", args, 1);
 }
 
 int	main(int argc, char **argv)
 {
-	t_args				*args;
+	t_args	args;
 
-	args = (t_args *)malloc(sizeof(t_args *));
-	if (!args)
-	{
-		printf("Error: allocating memory for args");
-		return (1);
-	}
-	ft_init_args(argc, argv, args);
-	ft_create_philos_forks(args);
-	args->t_start = ft_get_time_ms();
-	ft_creat_threads(args);
-	ft_exit_philo(args);
-	printf("######main#####\n");
+	memset((void *)&args, 0, sizeof(t_args));
+	ft_init_args(argc, argv, &args);
+	ft_init_philos_forks(&args);
+	ft_creat_threads(&args);
+	ft_exit_philo(&args);
 	return (0);
 }

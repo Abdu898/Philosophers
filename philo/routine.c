@@ -6,76 +6,88 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/07 18:49:47 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/12 21:29:38 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/20 04:24:57 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-//which philo died
-void	ft_check_died(t_args *args)
+int	ft_should_continue(t_philo *philo)
 {
-	int	i;
-
-	i = -1;
-	while (!(args->all_ate))
+	pthread_mutex_lock(&philo->died_check);
+	if (philo->death_call_out)
 	{
-		i = -1;
-		while (++i < args->n_philo && !(args->died))
-		{
-			pthread_mutex_lock(&(args->writing));
-			if (ft_get_time_ms() - args->philo[i].t_last_meal > args->t_die)
-			{
-				ft_print_action(args, "died");
-				args->died = 1;
-			}
-			pthread_mutex_unlock(&(args->writing));
-			usleep(100);// delay * 2!
-		}
-		//function to check which died
-		if (args->died)
-			break ;
-		i = 0;
-		while (args->n_eat != -1 && i < args->n_philo
-			&& args->philo[i].x_ate >= args->n_eat)
-			i++;
-		if (i == args->n_philo)
-			args->all_ate = 1;
+		pthread_mutex_unlock(&philo->died_check);
+		return (0);
 	}
-}
-
-void	ft_philo_eats(t_args *args)
-{
-	pthread_mutex_lock(&(args->forks[args->philo[args->p_i].l_fork]));
-	ft_print_action(args, "has taken a fork");
-	pthread_mutex_lock(&(args->forks[args->philo[args->p_i].r_fork]));
-	ft_print_action(args, "has taken a fork");
-	pthread_mutex_lock(&(args->meal_check));
-	ft_print_action(args, "is eating");
-	args->philo[args->p_i].t_last_meal = ft_get_time_ms() - args->t_start;
-	pthread_mutex_unlock(&(args->meal_check));
-	ft_smart_sleep(args, args->t_eat);
-	(args->philo[args->p_i].x_ate)++;
-	pthread_mutex_unlock(&(args->forks[args->philo[args->p_i].l_fork]));
-	pthread_mutex_unlock(&(args->forks[args->philo[args->p_i].r_fork]));
-}
-
-void	*ft_philo_routine(void *void_args)
-{
-	t_args	*args;
-
-	args = (t_args *)void_args;
-	if ((args->p_i) % 2 != 0)
-		usleep(50);
-	// ft_philo_eats(args);
-	while (!(args->died))
+	pthread_mutex_unlock(&philo->died_check);
+	pthread_mutex_lock(&philo->meal_check);
+	if (philo->all_ate)
 	{
-		ft_philo_eats(args);
-		if (args->all_ate)
+		pthread_mutex_unlock(&philo->meal_check);
+		return (0);
+	}
+	pthread_mutex_unlock(&philo->meal_check);
+	return (1);
+}
+
+void	ft_philo_eats(t_philo *philo)
+{
+	long	curr_time;
+
+	pthread_mutex_lock(philo->l_fork);
+	pthread_mutex_lock(philo->r_fork);
+	ft_print_action(philo, "has taken a fork");
+	ft_print_action(philo, "has taken a fork");
+	curr_time = ft_get_time_ms();
+	if (!ft_should_continue(philo))
+		return ;
+	ft_print_action(philo, "is eating");
+	pthread_mutex_lock(&philo->meal_check);
+	philo->t_last_meal = curr_time;
+	(philo->x_ate)++;
+	pthread_mutex_unlock(&philo->meal_check);
+	ft_smart_sleep(philo, curr_time, philo->t_eat);
+	pthread_mutex_unlock(philo->l_fork);
+	pthread_mutex_unlock(philo->r_fork);
+}
+
+void	ft_philo_sleeps(t_philo *philo)
+{
+	if (!ft_should_continue(philo))
+		return ;
+	ft_print_action(philo, "is sleeping");
+	ft_smart_sleep(philo, ft_get_time_ms(), philo->t_sleep);
+}
+
+void	ft_philo_thinks(t_philo *philo)
+{
+	long	curr_time;
+	long	t_think;
+
+	if (!ft_should_continue(philo))
+		return ;
+	ft_print_action(philo, "is thinking");
+	curr_time = ft_get_time_ms();
+	t_think = (philo->t_die - \
+				(curr_time - philo->t_last_meal) - philo->t_eat) / 2;
+	ft_smart_sleep(philo, curr_time, t_think);
+}
+
+void	*ft_philo_routine(void *void_philo)
+{
+	t_philo	*philo;
+
+	philo = (t_philo *)void_philo;
+	while (1)
+	{
+		if (philo->id % 2 == 0)
+			usleep(50);
+		ft_philo_eats(philo);
+		ft_philo_sleeps(philo);
+		ft_philo_thinks(philo);
+		if (!ft_should_continue(philo))
 			break ;
-		ft_print_action(args, "is_sleeping");
-		ft_smart_sleep(args, args->t_sleep);
-		ft_print_action(args, "is thinking");
 	}
 	return (NULL);
 }

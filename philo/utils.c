@@ -6,33 +6,11 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/07 01:35:52 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/13 17:46:42 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/20 01:27:56 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
-
-void	ft_bzero(void *s, size_t n)
-{
-	size_t	i;
-
-	i = -1;
-	while (++i < n)
-		((char *) s)[i] = '\0';
-}
-
-void	*ft_calloc(size_t nel, size_t elsize)
-{
-	void	*p;
-	int		prod;
-
-	p = malloc(nel * elsize);
-	if (!p)
-		return (NULL);
-	prod = nel * elsize;
-	ft_bzero(p, nel * elsize);
-	return (p);
-}
 
 int	ft_atoi(const char *strn)
 {
@@ -78,9 +56,14 @@ void	ft_destroy_forks(t_args *args)
 	while (++i < args->n_philo)
 	{
 		if (pthread_mutex_destroy(&args->forks[i]) != 0)
-			printf("Error: Failed destroying mutex for fork\n");
-			// ft_putstr_fd("Error: Failed destroying mutex for fork\n", 2);
+			printf("Error: Failed destroying mutex for fork[%d]\n", i);
+		if (pthread_mutex_destroy(&(args->philo[i].meal_check)) != 0)
+			printf("Error: Failed destroying mutex for meal_check\n");
+		if (pthread_mutex_destroy(&(args->philo[i].died_check)) != 0)
+			printf("Error: Failed destroying mutex for died_check\n");
 	}
+	if (pthread_mutex_destroy(&(args->writing)) != 0)
+		printf("Error: Failed destroying mutex for fork[%d]\n", i);
 }
 
 void	exit_with_error(char *errorMessage, t_args *args, int opt)
@@ -90,17 +73,24 @@ void	exit_with_error(char *errorMessage, t_args *args, int opt)
 		ft_destroy_forks(args);
 	}
 	printf("Error: %s \n", errorMessage);
-	free(args);
 	exit(EXIT_FAILURE);
 }
 
-/*change to print the l/r fork*/
-void	ft_print_action(t_args *args, char *str)
+void	ft_print_action(t_philo *philo, char *str)
 {
-	pthread_mutex_lock(&(args->writing));
-	if (!(args->died))
-		printf("%li %i %s\n",
-			ft_get_time_ms() - args->philo[args->p_i].t_start,
-			args->philo[args->p_i].id, str);
-	pthread_mutex_unlock(&(args->writing));
+	pthread_mutex_lock(philo->writing);
+	printf("%li %i %s\n", ft_get_time_ms() - philo->t_start, philo->id, str);
+	pthread_mutex_unlock(philo->writing);
 }
+
+/*change to print the l/r fork
+void	ft_print_action(t_philo *philo, char *str)
+{
+	pthread_mutex_lock(philo->writing);
+	if (!(philo->death_call_out))
+		printf("%li %i %s\n",
+			ft_get_time_ms() - philo->t_start,
+			philo->id, str);
+	pthread_mutex_unlock(philo->writing);
+}
+*/
