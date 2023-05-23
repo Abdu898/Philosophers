@@ -6,7 +6,7 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/07 01:35:52 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/20 01:27:56 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/23 01:59:09 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,26 +26,14 @@ int	ft_atoi(const char *strn)
 	if (strn[i] == '-' || strn[i] == '+')
 	{
 		if (strn[i] == '-')
+		{
 			sign = -1;
+		}
 		i++;
 	}
 	while (strn[i] != '\0' && (strn[i] >= '0' && strn[i] <= '9'))
 		res = res * 10 + (strn[i++] - '0');
 	return (res * sign);
-}
-
-void	ft_putstr_fd(char *s, int fd)
-{
-	size_t	i;
-
-	if (!s)
-		return ;
-	i = 0;
-	while (s[i])
-	{
-		write(fd, &s[i], 1);
-		i++;
-	}
 }
 
 void	ft_destroy_forks(t_args *args)
@@ -78,19 +66,15 @@ void	exit_with_error(char *errorMessage, t_args *args, int opt)
 
 void	ft_print_action(t_philo *philo, char *str)
 {
-	pthread_mutex_lock(philo->writing);
-	printf("%li %i %s\n", ft_get_time_ms() - philo->t_start, philo->id, str);
-	pthread_mutex_unlock(philo->writing);
-}
+	long	curr_time;
 
-/*change to print the l/r fork
-void	ft_print_action(t_philo *philo, char *str)
-{
+	curr_time = ft_get_time_ms();
 	pthread_mutex_lock(philo->writing);
-	if (!(philo->death_call_out))
-		printf("%li %i %s\n",
-			ft_get_time_ms() - philo->t_start,
-			philo->id, str);
+	if (!ft_should_continue(philo))
+	{
+		pthread_mutex_unlock(philo->writing);
+		return ;
+	}
+	printf("%li %i %s\n", curr_time - philo->t_start, philo->id, str);
 	pthread_mutex_unlock(philo->writing);
 }
-*/

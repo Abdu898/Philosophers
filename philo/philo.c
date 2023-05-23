@@ -6,7 +6,7 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/17 17:51:05 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/20 04:24:42 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/21 02:06:35 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,12 @@ void	ft_exit_philo(t_args *args)
 	int	i;
 
 	i = -1;
-	while (++i < args->n_philo)
+	if (args->n_philo > 1)
+	{
+		while (++i < args->n_philo)
+			pthread_join(args->philo_thread[i], NULL);
 		pthread_join(args->philo_thread[i], NULL);
-	pthread_join(args->philo_thread[i], NULL);
+	}
 	i = -1;
 	while (++i < args->n_philo)
 	{
@@ -34,11 +37,30 @@ void	ft_exit_philo(t_args *args)
 		printf("Error: Failed destroying mutex for fork[%d]\n", i);
 }
 
+int	ft_one_philo_routine(t_args *args)
+{
+	args->philo[0].t_start = args->t_start;
+	args->philo[0].t_last_meal = args->t_start;
+	if (args->n_philo > 1)
+		return (0);
+	ft_print_action(&args->philo[0], "has taken a fork");
+	ft_smart_sleep(&args->philo[0], args->t_start, args->t_die);
+	ft_print_action(&args->philo[0], "died");
+	return (1);
+}
+
 void	ft_creat_threads(t_args *args)
 {
 	int	i;
 
 	args->t_start = ft_get_time_ms();
+	if (ft_one_philo_routine(args))
+		return ;
+	if (args->t_die == 0)
+	{
+		printf("0 1 died\n");
+		return ;
+	}
 	i = -1;
 	while (++i < args->n_philo)
 	{

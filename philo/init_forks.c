@@ -6,7 +6,7 @@
 /*   By: ashahin <ashahin@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/15 00:19:53 by ashahin           #+#    #+#             */
-/*   Updated: 2023/05/20 03:39:40 by ashahin          ###   ########.fr       */
+/*   Updated: 2023/05/21 02:08:17 by ashahin          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ void	ft_init_philos_forks(t_args *args)
 	int	i;
 
 	if (pthread_mutex_init(&args->writing, NULL) != 0)
-		exit_with_error("Failed initializing mutex for Writing", args, 1);
+		exit_with_error("Failed initializing mutex for Writing", args, 0);
 	i = -1;
 	while (++i < args->n_philo)
 	{
@@ -27,6 +27,9 @@ void	ft_init_philos_forks(t_args *args)
 			exit_with_error("Failed"
 				" initializing mutex for meal_check", args, 1);
 		if (pthread_mutex_init(&args->philo[i].died_check, NULL) != 0)
+			exit_with_error("Failed"
+				" initializing mutex for died_check", args, 1);
+		if (pthread_mutex_init(&args->philo[i].x_ate_check, NULL) != 0)
 			exit_with_error("Failed"
 				" initializing mutex for died_check", args, 1);
 		args->philo[i].l_fork = &(args->forks[i]);
